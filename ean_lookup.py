@@ -225,6 +225,36 @@ def print_movie(movie, ean):
     print(f"{C_YELLOW}{C_BOLD}└{line}┘{C_RESET}\n")
 
 
+def send_to_backend(movie: dict, ean: str) -> None:
+    backend_url = os.environ.get("BACKEND_URL", "http://localhost:5000")
+    payload = {
+        "title": movie["title"] or "",
+        "description": movie["description"] or "",
+        "duration": movie["runtime_min"] or 0,
+        "publicationYear": movie["year"] or 0,
+        "posterUrl": movie["poster"] or "",
+        "genres": movie["genres"],
+        "actors": movie["cast"],
+        "streamingLocations": [
+            {
+                "streamingServiceId": 0,
+                "streamingServiceName": s["name"],
+                "uRL": s["url"],
+                "movieId": 0,
+            }
+            for s in movie["streaming"]
+        ],
+        "eaNs": [int(ean)],
+    }
+    try:
+        r = requests.post(f"{backend_url}/api/movie", json=payload, timeout=10)
+        r.raise_for_status()
+        movie_id = r.json().get("movieId")
+        print(f"{C_GREEN}  Saved to backend (movieId: {movie_id}){C_RESET}")
+    except requests.RequestException as e:
+        print(f"{C_RED}  Backend error: {e}{C_RESET}")
+
+
 def main():
     lookup = EANSearch(os.environ["EAN_API_TOKEN"])
     print(f"\n{C_CYAN}{C_BOLD}  DVD Orama Scanner  {C_RESET}")
@@ -248,6 +278,7 @@ def main():
                 continue
 
             print_movie(movie, ean)
+            send_to_backend(movie, ean)
     except KeyboardInterrupt:
         print(f"\n{C_DIM}  Done.{C_RESET}\n")
 

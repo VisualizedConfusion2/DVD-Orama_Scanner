@@ -1,10 +1,11 @@
 import os
 import requests
 from openai import OpenAI
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 from eansearch import EANSearch
 
 load_dotenv()
+_env = dotenv_values()
 
 COUNTRY = "DK"
 JUSTWATCH_IMAGE_BASE = "https://images.justwatch.com"
@@ -226,7 +227,7 @@ def print_movie(movie, ean):
 
 
 def send_to_backend(movie: dict, ean: str) -> None:
-    backend_url = os.environ.get("BACKEND_URL", "http://localhost:5000")
+    backend_url = _env.get("BACKEND_URL", "").rstrip("/")
     payload = {
         "title": movie["title"] or "",
         "description": movie["description"] or "",
